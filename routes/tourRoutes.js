@@ -11,14 +11,14 @@ const { getAllTours,
 
 const router = express.Router();
 
-router.param('id', checkID);
+//router.param('id');
 
 
 
 router
             .route('/')
             .get(getAllTours)
-            .post(checkInput, createTour)
+            .post(createTour)
 
 router
             .route('/:id')
