@@ -1,6 +1,6 @@
 
 const Tour = require("../models/tourModel")
-
+const APIFeautures = require("../utils/apiFeauture");
 
 exports.aliasTopTours = (req, res, next) => {
             req.query.limit = '5';
@@ -11,56 +11,12 @@ exports.aliasTopTours = (req, res, next) => {
 
 exports.getAllTours = async (req, res) => {
             try {
-                        //~Filtering
-
-                        const queryObj = { ...req.query };
-
-                        const excludedFields = ['page', 'sort', 'limit', 'fields'];
-
-                        excludedFields.forEach(el => delete queryObj[el])
-
-                        //~Advanced filtering
-
-                        let queryStr = JSON.stringify(queryObj);
-                        queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-
 
                         //^Build query
-                        let query = Tour.find(JSON.parse(queryStr));
-
-                        //~Sorting
-
-                        if (req.query.sort) {
-                                    const sortBy = req.query.sort.split(',').join(' ')
-                                    query = query.sort(sortBy)
-                        } else {
-                                    query = query.sort('-createdAt');
-                        }
-
-                        //~Field limiting
-
-                        if (req.query.fields) {
-                                    const fields = req.query.fields.split(',').join(' ');
-                                    query = query.select(fields);
-                        } else {
-                                    query = query.select('-__v');
-                        }
-
-                        //~Pagination
-
-                        const page = req.query.page * 1 || 1;
-                        const limit = req.query.limit * 1 || 100;
-                        const skip = (page - 1) * limit;
-
-                        query = query.skip(skip).limit(limit);
-
-                        if (req.query.page) {
-                                    const numTours = await Tour.countDocuments();
-                                    if (skip >= numTours) throw new Error("This page does not exist")
-                        }
+                        const feautures = new APIFeautures(Tour.find(), req.query).filter().sort().limitFields().pagination()
 
                         //^Execute query
-                        const tours = await query;
+                        const tours = await feautures.query;
 
                         return res.status(200).json({
                                     status: "success",
@@ -70,6 +26,7 @@ exports.getAllTours = async (req, res) => {
                                     }
                         })
             } catch (e) {
+                        console.log(e)
                         return res.status(500).json({
                                     status: "fail",
                                     message: e
@@ -145,6 +102,42 @@ exports.deleteTour = async (req, res) => {
                         return res.status(500).json({
                                     status: "fail",
                                     message: "Invalid data sent!"
+                        })
+            }
+}
+
+exports.getTourStats = async (req, res) => {
+            try {
+                        const stats = await Tour.aggregate([
+                                    {
+                                                $match: {
+                                                            ratingAverage: { $gte: 4.5 }
+                                                }
+                                    }
+                                    ,
+                                    {
+                                                $group: {
+                                                            _id: null,
+                                                            numRatings: { $sum: 'ratingQuantity' },
+                                                            numTours: { $sum: 1 },
+                                                            avgRating: { $avg: '$ratingAverage' },
+                                                            avgPrice: { $avg: '$price' },
+                                                            minPrice: { $min: '$price' },
+                                                            maxPrice: { $max: '$price' }
+
+                                                }
+                                    }
+
+
+                        ])
+                        res.status(200).json({
+                                    status: 'success',
+                                    data: { stats }
+                        })
+            } catch (error) {
+                        return res.status(500).json({
+                                    status: "fail",
+                                    message: error
                         })
             }
 }
