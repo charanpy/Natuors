@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 const tourSchema = new mongoose.Schema({
             name: {
                         type: String,
@@ -54,8 +55,23 @@ const tourSchema = new mongoose.Schema({
                         default: Date.now(),
                         select: false
             },
-            startDates: [Date]
+            startDates: [Date],
+            slug: String
+}, {
+            toJSON: { virtuals: true },
+            toObject: { virtuals: true }
+
 });
+
+tourSchema.virtual('durationWeeks').get(function () {
+            return this.duration / 7;
+})
+
+//DOC middleware-runs before save and .create command
+tourSchema.pre('save', function (next) {
+            this.slug = slugify(this.name, { lower: true });
+            next();
+})
 const Tour = mongoose.model('Tour', tourSchema);
 
 module.exports = Tour;
