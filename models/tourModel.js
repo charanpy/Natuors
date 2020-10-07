@@ -50,13 +50,18 @@ const tourSchema = new mongoose.Schema({
                         required: [true, 'A tour must have a cover image']
             },
             images: [String],
+            slug: String,
             createdAt: {
                         type: Date,
                         default: Date.now(),
                         select: false
             },
             startDates: [Date],
-            slug: String
+
+            secretTour: {
+                        type: Boolean,
+                        default: false
+            }
 }, {
             toJSON: { virtuals: true },
             toObject: { virtuals: true }
@@ -70,6 +75,29 @@ tourSchema.virtual('durationWeeks').get(function () {
 //DOC middleware-runs before save and .create command
 tourSchema.pre('save', function (next) {
             this.slug = slugify(this.name, { lower: true });
+            next();
+})
+//afyer doc saved to db
+// tourSchema.post('save',function(doc,next){
+//             next();
+// })
+
+//~Query middleware
+tourSchema.pre(/^find/, function (next) {
+            this.find({ secretTour: { $ne: true } })
+
+            this.start = Date.now()
+            next();
+})
+
+tourSchema.post(/^find/, function (doc, next) {
+            console.log(Date.now() - this.start)
+            next();
+})
+
+//~Aggregation Middleware
+tourSchema.pre('aggregate', function (next) {
+            this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })
             next();
 })
 const Tour = mongoose.model('Tour', tourSchema);
