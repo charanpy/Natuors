@@ -19,6 +19,9 @@ const handleValidationErrorDB = err => {
             return new AppError(message, 400);
 };
 
+const handleJWTError = err => new AppError("Invalid token.Please login in", 401)
+const handleJWTExpireError = err => new AppError("Your token has expired!Please login again", 401)
+
 const sendErrorDev = (err, res) => {
             res.status(err.statusCode).json({
                         status: err.status,
@@ -64,82 +67,9 @@ module.exports = (err, req, res, next) => {
                         if (error.code === 11000) error = handleDuplicateFieldsDB(error);
                         if (error.name === 'ValidationError')
                                     error = handleValidationErrorDB(error);
-
+                        if (error.name === 'JsonWebTokenError') error = handleJWTError(error)
+                        if (error.name === "TokenExpiredError") error = handleJWTExpireError(error)
                         sendErrorProd(error, res);
             }
 };
 
-
-
-// const AppError = require("../utils/appError")
-
-// const handleCastErrorDB = err => {
-//             console.log(err)
-//             const message = `Invalid ${err.path} :${err.value}`
-
-//             return new AppError(message, 400);
-// }
-
-// const handleDuplicateErrorDB = err => {
-//             const { name } = err.keyValue;
-//             const message = `Duplicate field value:${name} .Please use other value`
-
-//             return new AppError(message, 400);
-
-// }
-
-
-// const sendErrorForDev = (err, res) => {
-
-//             res.status(err.statusCode).json({
-//                         status: err.status,
-//                         error: err,
-//                         message: err.message,
-//                         stack: err.stack
-//             })
-// }
-
-// const sendErrorForProd = (err, res) => {
-//             //trusted error
-//             if (err.isOperational) {
-//                         res.status(err.statusCode).json({
-//                                     status: err.status,
-//                                     message: err.message,
-//                         })
-//             }
-//             //programming error
-//             else {
-
-//                         res.status(500).json({
-//                                     status: 'error',
-//                                     message: 'Something went wrong'
-//                         })
-//             }
-// }
-
-
-// module.exports = (err, req, res, next) => {
-//             err.statusCode = err.statusCode || 500;
-//             err.status = err.status || 'error';
-
-//             if (process.env.NODE_ENV === 'development') {
-//                         sendErrorForDev(err, res)
-//             }
-
-//             else if (process.env.NODE_ENV === 'production') {
-//                         let error = { ...err };
-
-
-//                         if (error.kind == "ObjectId") {
-//                                     console.log(1)
-//                                     erorr = handleCastErrorDB(error)
-//                         }
-//                         else if (error.code === 11000) {
-
-//                                     error = handleDuplicateErrorDB(error)
-//                         }
-//                         else {
-//                                     sendErrorForProd(error, res)
-//                         }
-//             }
-// }

@@ -11,11 +11,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.10.7",
     "morgan": "^1.10.0",
     "ndb": "^1.1.5",
+    "nodemailer": "^6.4.13",
     "slugify": "^1.4.5",
     "validator": "^13.1.17"
   }
